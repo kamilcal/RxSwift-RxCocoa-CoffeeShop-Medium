@@ -7,36 +7,49 @@
 //
 
 import Foundation
+import RxSwift
+import RxCocoa
 
 class ShoppingCart {
   
   static let shared = ShoppingCart()
   
-  var coffees: [Coffee: Int] = [:]
+  var coffees: BehaviorRelay<[Coffee: Int]> = .init(value: [:])
   
   private init() {}
   
   func addCoffee(_ coffee: Coffee, withCount count: Int) {
-    if let currentCount = coffees[coffee] {
-      coffees[coffee] = currentCount + count
+    var tempCoffees = coffees.value
+                // BehaviourSubject bir değişkenin value parametresine ulaşarak Subject’e en son emit edilen elemanı alabiliyoruz
+    
+    if let currentCount = tempCoffees[coffee] {
+      tempCoffees[coffee] = currentCount + count
     } else {
-      coffees[coffee] = count
+      tempCoffees[coffee] = count
     }
+    
+    coffees.accept(tempCoffees)
+                    // accept(:_) metoduyla BehaviourSubject tipindeki bir değişkenin içersine yeni bir eleman emit edebiliyoruz.
   }
   
   func removeCoffee(_ coffee: Coffee) {
-    coffees[coffee] = nil
+    var tempCoffees = coffees.value
+                    //Burada da ekleme yaparken kullandığımızla aynı şekilde değişkenin içindeki en son değeri alıp, gecici değişkene atıyoruz.
+    tempCoffees[coffee] = nil
+    
+    coffees.accept(tempCoffees)
   }
   
-  func getTotalCost() -> Float {
-    return coffees.reduce(Float(0)) { $0 + ($1.key.price * Float($1.value)) }
+  func getTotalCost() -> Observable<Float> {
+    return coffees.map { $0.reduce(Float(0)) { $0 + ($1.key.price * Float($1.value)) }}
   }
   
-  func getTotalCount() -> Int {
-    return coffees.reduce(0) { $0 + $1.value }
+  func getTotalCount() -> Observable<Int> {
+    return coffees.map { $0.reduce(0) { $0 + $1.value }}
   }
   
-  func getCartItems() -> [CartItem] {
-    return coffees.map { CartItem(coffee: $0.key, count: $0.value) }
+  func getCartItems() -> Observable<[CartItem]> {
+    return coffees.map { $0.map { CartItem(coffee: $0.key, count: $0.value) }}
   }
 }
+

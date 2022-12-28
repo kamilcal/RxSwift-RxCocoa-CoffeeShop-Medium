@@ -65,15 +65,16 @@ class MenuViewController: BaseViewController {
                 }
             })
             .disposed(by: disposeBag)
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
         
-        let totalOrderCount = ShoppingCart.shared.getTotalCount()
-        
-        shoppingCartButton.badgeText = totalOrderCount != 0 ? "\(totalOrderCount)" : nil
+        //  MARK: - ShoppingCart
+
+        ShoppingCart.shared.getTotalCount()
+            .subscribe(onNext: { [weak self] totalOrderCount in
+                self?.shoppingCartButton.badgeText =  totalOrderCount != 0 ? "\(totalOrderCount)" : nil
+            })
+            .disposed(by: disposeBag)
     }
+
     
     private func configureTableView() {
         tableView.rowHeight = 104
@@ -97,18 +98,6 @@ class MenuViewController: BaseViewController {
     }
 }
 
-extension MenuViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 104
-    }
-    
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        
-        guard indexPath.row < coffees.count else { return }
-        
-        performSegue(withIdentifier: "OrderCofeeSegue", sender: coffees[indexPath.row])
-    }
-}
+
 
 
